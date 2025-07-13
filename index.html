@@ -117,7 +117,7 @@
         const gameData = {
             historian: {
                 title: "The Historian's Scroll",
-                instructions: "Arrange the historical events in chronological order from earliest to latest. Tap an event to add it to your timeline, then submit your answer.",
+                instructions: "For each of the 5 challenges, arrange the historical events in chronological order from earliest to latest. Tap an event to add it to your timeline, then submit your answer.",
                 questions: [
                     {
                         question: "Arrange these foundational events in the Southern Rhône's history.",
@@ -552,7 +552,7 @@
             currentQuestionIndex = 0;
 
             if (currentModule === 'historian') {
-                questions = shuffleArray([...gameData.historian.questions]).slice(0, 1); // Only one timeline question per game
+                questions = shuffleArray([...gameData.historian.questions]);
                 loadHistorianQuestion();
             } else {
                 questions = shuffleArray([...gameData[currentModule].questions]).slice(0, 10);
@@ -589,7 +589,7 @@
                         <p class="text-xl md:text-2xl font-medium mb-6">${q.q}</p>
                         <div class="space-y-4">
                             ${options.map(option => `
-                                <button class="block w-full text-left bg-gray-700 p-4 rounded-lg hover:bg-purple-700 transition-colors duration-200" onclick="checkAnswer('${option}')">
+                                <button class="block w-full text-left bg-gray-700 p-4 rounded-lg hover:bg-purple-700 transition-colors duration-200" onclick="checkAnswer('${option.replace(/'/g, "\\'")}')">
                                     ${option}
                                 </button>
                             `).join('')}
@@ -614,11 +614,11 @@
                 
                 // AI Button Logic
                 if (currentModule === 'ampelographer') {
-                    feedbackHtml += `<button onclick="handleAiRequest('ampelography', '${q.a}')" class="mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded text-sm">📚 Generate Ampelography Profile for ${q.a}</button>`;
+                    feedbackHtml += `<button onclick="handleAiRequest('ampelography', '${q.a.replace(/'/g, "\\'")}')" class="mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded text-sm">📚 Generate Ampelography Profile for ${q.a}</button>`;
                 } else if (currentModule === 'critic') {
-                     feedbackHtml += `<button onclick="handleAiRequest('tastingNote', '${q.a}')" class="mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded text-sm">✨ Generate Tasting Note for ${q.a}</button>`;
+                     feedbackHtml += `<button onclick="handleAiRequest('tastingNote', '${q.a.replace(/'/g, "\\'")}')" class="mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded text-sm">✨ Generate Tasting Note for ${q.a}</button>`;
                 } else if (currentModule === 'gastronome') {
-                    feedbackHtml += `<button onclick="handleAiRequest('pairing', '${q.a}')" class="mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded text-sm">🍴 Explain the Pairing for ${q.a}</button>`;
+                    feedbackHtml += `<button onclick="handleAiRequest('pairing', '${q.a.replace(/'/g, "\\'")}')" class="mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded text-sm">🍴 Explain the Pairing for ${q.a}</button>`;
                 }
 
                 feedbackHtml += `</div>`;
@@ -640,13 +640,18 @@
         
         // --- Historian's Scroll Logic ---
         function loadHistorianQuestion() {
-            const q = questions[0]; // Only one timeline question
+            if (currentQuestionIndex >= questions.length) {
+                showEndGameModal();
+                return;
+            }
+
+            const q = questions[currentQuestionIndex];
             userTimeline = [];
             const availableEvents = shuffleArray([...q.events]);
 
             gameScreen.innerHTML = `
                 <div class="w-full max-w-4xl">
-                     <p class="text-center text-gray-400 mb-4">Question 1 / 1</p>
+                     <p class="text-center text-gray-400 mb-4">Question ${currentQuestionIndex + 1} / ${questions.length} | Score: ${score}</p>
                     <div class="bg-gray-800 p-6 rounded-lg">
                         <p class="text-xl text-center font-medium mb-6">${q.question}</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -700,7 +705,7 @@
 
         function removeFromTimeline(index) {
             const removedEvent = userTimeline.splice(index, 1)[0];
-            const originalButton = document.querySelector(`#available-events .timeline-item[data-index='${questions[0].events.findIndex(e => e.text === removedEvent.text)}']`);
+            const originalButton = document.querySelector(`#available-events .timeline-item[data-index='${questions[currentQuestionIndex].events.findIndex(e => e.text === removedEvent.text)}']`);
             if (originalButton) {
                 originalButton.classList.remove('selected', 'opacity-50', 'cursor-not-allowed');
                 originalButton.disabled = false;
@@ -709,7 +714,7 @@
         }
 
         function checkTimeline() {
-            const q = questions[0];
+            const q = questions[currentQuestionIndex];
             const correctTimeline = [...q.events].sort((a, b) => a.date - b.date);
             let isCorrect = userTimeline.length === correctTimeline.length;
             if (isCorrect) {
@@ -720,7 +725,10 @@
                     }
                 }
             }
-            score = isCorrect ? 1 : 0;
+            
+            if(isCorrect) {
+                score++;
+            }
             
             const feedbackContent = `
                 <div class="p-6">
@@ -739,10 +747,20 @@
                             </ol>
                         </div>
                     </div>
-                    <button onclick="showEndGameModal()" class="mt-6 w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Continue</button>
+                    <button onclick="nextHistorianQuestion()" class="mt-6 w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Continue</button>
                 </div>
             `;
             showModal(feedbackContent);
+        }
+
+        function nextHistorianQuestion() {
+            hideModal();
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadHistorianQuestion();
+            } else {
+                showEndGameModal();
+            }
         }
 
         // --- Flashcard Logic ---
@@ -788,11 +806,15 @@
             selectedTopics.forEach(topic => {
                 if (gameData[topic].questions) {
                     if (topic === 'historian') {
-                        gameData[topic].questions.forEach(q => {
-                            const correctAnswer = [...q.events].sort((a,b) => a.date - b.date).map((e,i) => `${i+1}. ${e.text} (${e.date > 0 ? e.date : Math.abs(e.date) + ' BC'})`).join('<br>');
-                            flashcardDeck.push({ q: q.question, a: correctAnswer });
+                        // Create individual flashcards for each historical event
+                        gameData[topic].questions.forEach(question => {
+                            question.events.forEach(event => {
+                                const formattedDate = event.date > 0 ? `${event.date}` : `${Math.abs(event.date)} BC`;
+                                flashcardDeck.push({ q: event.text, a: formattedDate });
+                            });
                         });
                     } else {
+                        // Standard flashcard creation for other topics
                         gameData[topic].questions.forEach(q => {
                             flashcardDeck.push({ q: q.q, a: q.a });
                         });
@@ -823,7 +845,7 @@
                     <div class="flashcard-container w-full h-80 mb-6">
                         <div class="flashcard" onclick="this.classList.toggle('is-flipped')">
                             <div class="flashcard-face flashcard-front text-2xl font-semibold text-center">${card.q}</div>
-                            <div class="flashcard-face flashcard-back text-xl text-center overflow-y-auto">${card.a}</div>
+                            <div class="flashcard-face flashcard-back text-4xl font-bold text-center overflow-y-auto">${card.a}</div>
                         </div>
                     </div>
                     <div class="flex justify-between w-full">
