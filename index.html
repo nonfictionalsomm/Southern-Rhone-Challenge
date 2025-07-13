@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Southern Rhône: A Wine Master's Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .modal-content {
+            max-height: 80vh;
+        }
+        .prose-purple a {
+            color: #9333ea;
+        }
+        .prose-purple a:hover {
+            color: #7e22ce;
+        }
+        .timeline-item.selected {
+            background-color: #6b21a8;
+            color: white;
+        }
+        .flashcard-container {
+            perspective: 1000px;
+        }
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+        .flashcard.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            border-radius: 0.5rem;
+        }
+        .flashcard-front {
+            background-color: #374151; /* gray-700 */
+        }
+        .flashcard-back {
+            background-color: #4b5563; /* gray-600 */
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div id="main-menu" class="min-h-screen flex flex-col items-center justify-center p-4">
+        <h1 class="text-4xl md:text-5xl font-bold text-purple-400 mb-2 text-center">The Southern Rhône</h1>
+        <h2 class="text-2xl md:text-3xl font-semibold mb-8 text-center">A Wine Master's Challenge</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl mb-8">
+            <button data-module="historian" class="module-btn bg-gray-800 p-6 rounded-lg hover:bg-purple-700 transition-colors duration-300">
+                <h3 class="text-xl font-bold mb-2">The Historian's Scroll</h3>
+                <p class="text-gray-400">Order the key events that shaped the Rhône.</p>
+            </button>
+            <button data-module="terroir" class="module-btn bg-gray-800 p-6 rounded-lg hover:bg-purple-700 transition-colors duration-300">
+                <h3 class="text-xl font-bold mb-2">The Terroir Architect</h3>
+                <p class="text-gray-400">Master the soils, climate, and geography.</p>
+            </button>
+            <button data-module="ampelographer" class="module-btn bg-gray-800 p-6 rounded-lg hover:bg-purple-700 transition-colors duration-300">
+                <h3 class="text-xl font-bold mb-2">The Ampelographer's Challenge</h3>
+                <p class="text-gray-400">Identify the region's key grape varieties.</p>
+            </button>
+            <button data-module="lawmaker" class="module-btn bg-gray-800 p-6 rounded-lg hover:bg-purple-700 transition-colors duration-300">
+                <h3 class="text-xl font-bold mb-2">The Lawmaker's Desk</h3>
+                <p class="text-gray-400">Navigate the complexities of AOC law.</p>
+            </button>
+            <button data-module="gastronome" class="module-btn bg-gray-800 p-6 rounded-lg hover:bg-purple-700 transition-colors duration-300">
+                <h3 class="text-xl font-bold mb-2">The Gastronome's Table</h3>
+                <p class="text-gray-400">Explore classic food pairings and local cuisine.</p>
+            </button>
+            <button data-module="critic" class="module-btn bg-gray-800 p-6 rounded-lg hover:bg-purple-700 transition-colors duration-300">
+                <h3 class="text-xl font-bold mb-2">The Critic's Corner</h3>
+                <p class="text-gray-400">Analyze vintages and iconic producers.</p>
+            </button>
+        </div>
+
+        <div class="w-full max-w-4xl">
+             <button data-module="flashcard" class="module-btn bg-gray-800 p-6 rounded-lg hover:bg-purple-700 transition-colors duration-300 w-full">
+                <h3 class="text-xl font-bold mb-2">Flashcard Study</h3>
+                <p class="text-gray-400">Build your knowledge with targeted review.</p>
+            </button>
+        </div>
+        
+        <button id="ai-settings-btn" class="mt-8 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+            ⚙️ AI Settings
+        </button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-4">
+        <!-- Content will be injected here -->
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-container" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div id="modal-content-wrapper" class="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl modal-content overflow-y-auto">
+            <!-- Modal content will be injected here -->
+        </div>
+    </div>
+
+    <script>
+        const gameData = {
+            historian: {
+                title: "The Historian's Scroll",
+                instructions: "Arrange the historical events in chronological order from earliest to latest. Tap an event to add it to your timeline, then submit your answer.",
+                questions: [
+                    {
+                        question: "Arrange these foundational events in the Southern Rhône's history.",
+                        events: [
+                            { text: "Phylloxera first appears in the Southern Rhône.", date: 1866 },
+                            { text: "The Papacy relocates to Avignon, boosting the region's wine prestige.", date: 1309 },
+                            { text: "Greek colonists introduce viticulture near Marseille.", date: -400 }, // 4th Century BC
+                            { text: "Baron Le Roy forms the Syndicat des Vignerons de Châteauneuf-du-Pape.", date: 1923 },
+                            { text: "A royal decree mandates 'C.D.R.' branding on wine barrels.", date: 1737 },
+                        ]
+                    },
+                    {
+                        question: "Order the establishment of these key Southern Rhône AOCs.",
+                        events: [
+                            { text: "Gigondas is elevated to Cru status.", date: 1971 },
+                            { text: "Châteauneuf-du-Pape becomes the first AOC in France.", date: 1936 },
+                            { text: "Vacqueyras is elevated to Cru status.", date: 1990 },
+                            { text: "Côtes du Rhône AOC is established.", date: 1937 },
+                            { text: "Lirac is granted AOC status.", date: 1947 },
+                        ]
+                    },
+                    {
+                        question: "Place these 21st-century AOC elevations in the correct order.",
+                        events: [
+                            { text: "Cairanne is elevated to Cru status.", date: 2016 },
+                            { text: "White wines are officially added to the Gigondas AOC.", date: 2022 },
+                            { text: "Rasteau's dry red wines are elevated to Cru status.", date: 2010 },
+                            { text: "Laudun is elevated to Cru status.", date: 2024 },
+                            { text: "Vinsobres is elevated to Cru status.", date: 2006 },
+                        ]
+                    },
+                    {
+                        question: "Sequence the key moments in the development of quality control.",
+                        events: [
+                            { text: "The 'Coste du Rhône' district introduces quality regulations.", date: 1650 },
+                            { text: "The INAO is established, formalizing the AOC system nationally.", date: 1935 }, // The decree was 1935, CdP was first in 1936
+                            { text: "A court ruling in Orange legally defines the production rules for Châteauneuf-du-Pape.", date: 1933 },
+                            { text: "The 'C.D.R.' branding is mandated by royal decree.", date: 1737 },
+                            { text: "Baron Le Roy founds the first growers' syndicate in Châteauneuf-du-Pape.", date: 1923 },
+                        ]
+                    },
+                    {
+                        question: "Organize the timeline of key figures and their impact.",
+                        events: [
+                            { text: "Roman soldiers of the Second Legion establish a settlement at 'Jocunditas' (Gigondas).", date: 100 }, // 1st Century AD
+                            { text: "Pope John XXII builds the summer palace at Châteauneuf-du-Pape.", date: 1316 }, // He was Pope from 1316
+                            { text: "Baron Pierre Le Roy de Boiseaumarié drafts the rules that become the model for the AOC system.", date: 1933 },
+                            { text: "Pope Clement V moves the papal court to Avignon.", date: 1309 },
+                            { text: "Kermit Lynch begins championing traditional Rhône producers to an international audience.", date: 1972 }, // Kermit Lynch Wine Merchant founded
+                        ]
+                    }
+                ]
+            },
+            terroir: {
+                title: "The Terroir Architect",
+                instructions: "Answer 10 multiple-choice questions about the geology, geography, and climate of the Southern Rhône.",
+                questions: [
+                    { q: "What is the defining climatic feature of the Southern Rhône, known for drying vines but also posing a risk to young shoots?", a: "The Mistral Wind", o: ["The Sirocco Wind", "The Foehn Wind", "The Marin Wind"] },
+                    { q: "What are the iconic large, rounded stones found in Châteauneuf-du-Pape called?", a: "Galets roulés", o: ["Cailloux", "Grès", "Safres"] },
+                    { q: "The Southern Rhône's climate is best described as:", a: "Mediterranean", o: ["Continental", "Maritime", "Alpine"] },
+                    { q: "Which of these is NOT one of the four primary soil types identified by Inter Rhône?", a: "Volcanic basalt", o: ["Limestone soils (calcaires)", "Clay soils (argileux)", "Sandy soils (sableux)"] },
+                    { q: "What is the primary geological origin of the 'galets roulés'?", a: "Alluvial deposits from Alpine glaciers", o: ["Marine sediment from the Tertiary period", "Volcanic eruption debris", "Wind-blown loess"] },
+                    { q: "Which soil type is prized for its superior water retention in the region's dry climate?", a: "Clay soils (argileux)", o: ["Sandy soils (sableux)", "Limestone soils (calcaires)", "Stony soils"] },
+                    { q: "The dramatic limestone peaks that define the terroir of Gigondas and Vacqueyras are called:", a: "The Dentelles de Montmirail", o: ["The Massif Central", "Mont Ventoux", "The Pyrenees"] },
+                    { q: "Based on the Winkler Index, the Southern Rhône is classified as which climate region, ideal for ripening Grenache?", a: "Region III", o: ["Region I", "Region II", "Region IV"] },
+                    { q: "What is the main viticultural benefit of the Mistral wind?", a: "It reduces pressure from fungal diseases.", o: ["It increases soil moisture.", "It protects vines from frost.", "It accelerates sugar accumulation."] },
+                    { q: "Vineyards on the slopes of Mont Ventoux can reach elevations of up to:", a: "600 meters", o: ["200 meters", "400 meters", "800 meters"] },
+                    { q: "Which soil type, found at Château Rayas, is known for producing more elegant, aromatic, 'Burgundian' styles of Châteauneuf-du-Pape?", a: "Sandy soils (Sables)", o: ["Galets roulés", "Clay-limestone", "Red iron-rich clay"] },
+                    { q: "What is the primary viticultural risk associated with the region's hot, dry summers and low rainfall?", a: "Drought", o: ["Spring Frost", "Hail", "Excessive vigor"] },
+                    { q: "The Southern Rhône accounts for approximately what percentage of the entire Rhône Valley's wine production?", a: "95%", o: ["50%", "75%", "85%"] },
+                    { q: "What is the local term for compacted sandy or sandy-marl soils?", a: "Safres", o: ["Grès", "Galets", "Marnes"] },
+                    { q: "Which department is NOT part of the Southern Rhône viticultural area?", a: "Gironde", o: ["Vaucluse", "Gard", "Drôme"] },
+                    { q: "The thermal effect of the galets roulés primarily leads to wines with:", a: "Higher sugar levels and lower acidity", o: ["Lower sugar levels and higher acidity", "More herbal notes", "Lighter body"] },
+                    { q: "The parent rock of prominent features like the Dentelles de Montmirail is predominantly:", a: "Mesozoic limestone and marl", o: ["Quaternary granite", "Tertiary volcanic rock", "Jurassic sandstone"] },
+                    { q: "What is the main reason organic and biodynamic viticulture are more easily practiced in the Southern Rhône?", a: "The drying effect of the Mistral wind", o: ["The high pH of the soils", "The low planting densities", "The legality of irrigation"] },
+                    { q: "A rising climatic risk due to earlier budbreak is:", a: "Spring Frost", o: ["Drought", "Coulure", "Sunburn"] },
+                    { q: "The city recognized as the capital of the Côtes du Rhône is:", a: "Avignon", o: ["Orange", "Nîmes", "Montélimar"] },
+                    { q: "The topography of the Southern Rhône becomes more elevated and dramatic towards the:", a: "East, towards the Alps", o: ["West, towards the Massif Central", "North, towards Lyon", "South, towards the Mediterranean"] },
+                    { q: "The elevation of vineyards in Gigondas can reach up to:", a: "Over 600 meters", o: ["120 meters", "300 meters", "450 meters"] },
+                    { q: "The aromatic scrubland of wild herbs that defines the landscape is called:", a: "Garrigue", o: ["Maquis", "Bocage", "Fôret"] },
+                    { q: "Which of these is a key benefit of limestone soils?", a: "Excellent drainage", o: ["High water retention", "Heat absorption", "High nutrient content"] },
+                    { q: "The valley was formed by the tectonic collision of the Massif Central and which other mountain range?", a: "The Alps", o: ["The Pyrenees", "The Jura Mountains", "The Vosges Mountains"] },
+                    { q: "What is the approximate annual rainfall in the Avignon/Orange area?", a: "Around 613 mm", o: ["Around 400 mm", "Around 850 mm", "Around 1000 mm"] },
+                    { q: "The total annual sunshine hours in the Southern Rhône are approximately:", a: "2750 hours", o: ["2000 hours", "2400 hours", "3000 hours"] },
+                    { q: "The Saracen Tower, a 9th-century watchtower, is a historical monument located in which Cru?", a: "Gigondas", o: ["Vacqueyras", "Châteauneuf-du-Pape", "Tavel"] },
+                    { q: "The Roman Theatre and Triumphal Arch are UNESCO World Heritage sites located in which city?", a: "Orange", o: ["Avignon", "Nîmes", "Vienne"] },
+                    { q: "What is the primary function of the clay subsoil beneath the galets roulés?", a: "It acts as a water reservoir", o: ["It provides thermal insulation", "It lowers soil pH", "It improves drainage"] },
+                    { q: "Higher altitude vineyards in the Southern Rhône generally produce wines with more:", a: "Freshness and acidity", o: ["Alcohol and body", "Ripe, jammy fruit", "Softer tannins"] },
+                    { q: "Which of the top Crus is known for having a cooler climate and later harvest due to its northerly position and elevation?", a: "Vinsobres", o: ["Lirac", "Tavel", "Rasteau"] },
+                    { q: "The Southern Rhône stretches from Montélimar in the north to which two cities in the south?", a: "Avignon and Nîmes", o: ["Marseille and Toulon", "Valence and Vienne", "Lyon and Grenoble"] },
+                    { q: "The total Growing Degree Days (GDD) for the Southern Rhône is approximately:", a: "1932", o: ["1550", "1780", "2100"] },
+                    { q: "Which month typically has the lowest precipitation?", a: "July", o: ["October", "November", "May"] },
+                    { q: "What is the primary viticultural challenge posed by sandy soils?", a: "Lower water-holding capacity", o: ["Poor drainage", "High pH", "Excessive vigor"] },
+                    { q: "The 'Clos de la Vigne du Palais des Papes' is a small vineyard overlooking which major landmark?", a: "Palais des Papes, Avignon", o: ["Roman Theatre of Orange", "Pont du Gard", "Fortress at Châteauneuf-du-Pape"] },
+                    { q: "The name 'Dentelles de Montmirail' translates to:", a: "Lace of Montmirail", o: ["Teeth of Montmirail", "Giants of Montmirail", "Mirrors of Montmirail"] },
+                    { q: "The risk of coulure (poor fruit set) is exacerbated by:", a: "Cool, wet, or windy conditions during flowering", o: ["Hot, dry conditions during veraison", "Low nutrient soils", "High planting densities"] },
+                    { q: "Which is the hottest month on average in the Southern Rhône?", a: "July", o: ["June", "August", "September"] },
+                    { q: "What is the main geological parent material for the soils in the Southern Rhône?", a: "Sedimentary rock (limestone, marl)", o: ["Igneous rock (granite, basalt)", "Metamorphic rock (schist, gneiss)", "Volcanic ash"] },
+                    { q: "The city of Orange was founded as a colony for veterans of which Roman legion?", a: "Legio II Gallica", o: ["Legio X Gemina", "Legio IX Hispana", "Legio XIII Gemina"] },
+                    { q: "The Quaternary period glaciation led to the deposition of what kind of material by the Rhône river?", a: "Alluvial material (sand, clay, galets)", o: ["Loess (wind-blown silt)", "Marine fossils", "Volcanic tuff"] },
+                    { q: "The 'Comtat Venaissin' is known for its sandy molasses sediments from which geological period?", a: "Tertiary", o: ["Mesozoic", "Quaternary", "Cretaceous"] },
+                    { q: "The high diurnal temperature range on the slopes of Mont Ventoux is crucial for developing:", a: "Complex aromatics and vibrant acidity", o: ["High alcohol and full body", "Deep color and powerful tannins", "Early ripening"] },
+                    { q: "Which soil type is particularly well-suited for white grape varieties due to its finesse and precision?", a: "Limestone soils (calcaires)", o: ["Clay soils (argileux)", "Galets roulés", "Sandy soils (sableux)"] },
+                    { q: "The Southern Rhône is geographically more open than its northern counterpart, which is characterized by:", a: "Steep, narrow valleys", o: ["Flat, wide plains", "Rolling hills", "Coastal marshes"] },
+                    { q: "The average altitude in the heart of Châteauneuf-du-Pape is:", a: "60-120 meters", o: ["200-300 meters", "350-500 meters", "Below sea level"] },
+                    { q: "The 'Saracen Tower' in Gigondas dates back to which century?", a: "9th century", o: ["12th century", "14th century", "7th century"] },
+                    { q: "The risk of spring frost is most acute in which type of location?", a: "Flat valley floors", o: ["High-altitude slopes", "Windy plateaus", "South-facing vineyards"] },
+                ]
+            },
+            ampelographer: {
+                title: "The Ampelographer's Challenge",
+                instructions: "Answer 10 multiple-choice questions about the key grape varieties of the Southern Rhône. After a correct answer, you may have the option to generate an AI profile.",
+                questions: [
+                    { q: "Which grape is considered the undisputed 'king' of the Southern Rhône?", a: "Grenache", o: ["Syrah", "Mourvèdre", "Cinsault"] },
+                    { q: "Which grape variety is a native of the Northern Rhône Valley?", a: "Syrah", o: ["Grenache", "Mourvèdre", "Carignan"] },
+                    { q: "Which grape famously requires 'its face in the hot sun and its feet in the water' to ripen fully?", a: "Mourvèdre", o: ["Grenache", "Syrah", "Viognier"] },
+                    { q: "Which grape variety is notoriously susceptible to 'coulure' (poor fruit set)?", a: "Grenache", o: ["Syrah", "Mourvèdre", "Clairette"] },
+                    { q: "The traditional Gobelet (bush vine) training system is best suited for which grape?", a: "Grenache", o: ["Syrah", "Viognier", "Marsanne"] },
+                    { q: "Which grape variety must typically be trellised due to its trailing growth habit?", a: "Syrah", o: ["Grenache", "Mourvèdre", "Cinsault"] },
+                    { q: "Which of the main red grapes is the latest to ripen, often harvested in October?", a: "Mourvèdre", o: ["Grenache", "Syrah", "Cinsault"] },
+                    { q: "Which grape provides the blend's core of generous red fruit, body, and alcohol?", a: "Grenache", o: ["Syrah", "Mourvèdre", "Carignan"] },
+                    { q: "Which grape contributes structure, spicy notes of black pepper, and deep color to the GSM blend?", a: "Syrah", o: ["Grenache", "Mourvèdre", "Counoise"] },
+                    { q: "Which grape offers tannic backbone, savory complexity, and significant aging potential to a blend?", a: "Mourvèdre", o: ["Grenache", "Syrah", "Cinsault"] },
+                    { q: "DNA analysis has shown Syrah to be an offspring of Dureza and which other variety?", a: "Mondeuse Blanche", o: ["Viognier", "Roussanne", "Terret Noir"] },
+                    { q: "What is the Spanish name for Grenache?", a: "Garnacha", o: ["Monastrell", "Tempranillo", "Mazuelo"] },
+                    { q: "What is the Spanish name for Mourvèdre?", a: "Monastrell", o: ["Garnacha", "Carinena", "Bobal"] },
+                    { q: "Which viticultural issue, where the graft union swells and cracks, is a known problem for Syrah?", a: "Syrah decline", o: ["Coulure", "Millerandage", "Chlorosis"] },
+                    { q: "Which of these is NOT a color mutation of Grenache?", a: "Grenache Jaune", o: ["Grenache Noir", "Grenache Blanc", "Grenache Gris"] },
+                    { q: "Which grape's thick skins provide deep color and high tannins, making it resistant to grey rot?", a: "Mourvèdre", o: ["Grenache", "Cinsault", "Picpoul"] },
+                    { q: "The conservatory established in the Rhône in 1998 aims to preserve the genetic heritage of which grape?", a: "Grenache", o: ["Syrah", "Mourvèdre", "All Rhône varieties"] },
+                    { q: "Which grape is particularly sensitive to lime-induced chlorosis on high-pH soils?", a: "Syrah", o: ["Grenache", "Mourvèdre", "Roussanne"] },
+                    { q: "Which grape has a relatively early budbreak, exposing it to spring frost risk?", a: "Grenache", o: ["Syrah", "Mourvèdre", "Picardan"] },
+                    { q: "Which grape is the primary component of Muscat de Beaumes-de-Venise?", a: "Muscat à Petits Grains", o: ["Muscat of Alexandria", "Grenache Blanc", "Viognier"] },
+                    { q: "In the warmer climate of the south, Syrah tends to produce wines with jammier fruit and notes of:", a: "Cocoa and licorice", o: ["Black pepper and violets", "Green olive and bacon fat", "Raspberry and white pepper"] },
+                    { q: "Which of the main red grapes has the highest tolerance to drought?", a: "Grenache", o: ["Syrah", "Mourvèdre", "Pinot Noir"] },
+                    { q: "Which of the following is a key white grape variety in the Southern Rhône?", a: "Roussanne", o: ["Sauvignon Blanc", "Chardonnay", "Chenin Blanc"] },
+                    { q: "Which grape is often used for rosé wines due to the finesse and freshness it provides?", a: "Cinsault", o: ["Mourvèdre", "Syrah", "Carignan"] },
+                    { q: "The 'GSM' blend stands for:", a: "Grenache, Syrah, Mourvèdre", o: ["Grenache, Syrah, Merlot", "Garnacha, Shiraz, Monastrell", "Gigondas, Syrah, Mourvèdre"] },
+                    { q: "Which white grape is, along with Marsanne, a key component of white Hermitage in the north but also found in the south?", a: "Roussanne", o: ["Viognier", "Clairette", "Bourboulenc"] },
+                    { q: "Which grape variety's acreage is on the decline in the Southern Rhône?", a: "Carignan", o: ["Grenache", "Syrah", "Mourvèdre"] },
+                    { q: "How many distinct clones of Grenache Noir are certified by French authorities?", a: "24", o: ["12", "18", "36"] },
+                    { q: "Which grape is known for its upright growth habit, making it suitable for Gobelet training?", a: "Grenache", o: ["Syrah", "Viognier", "Marsanne"] },
+                    { q: "Which grape has a late budbreak, offering it some protection against spring frosts?", a: "Mourvèdre", o: ["Grenache", "Cinsault", "Clairette"] },
+                    { q: "Which grape variety is a key component of white Châteauneuf-du-Pape, known for adding richness and texture?", a: "Roussanne", o: ["Viognier", "Sauvignon Blanc", "Aligoté"] },
+                    { q: "The grape 'Counoise' is a permitted variety in Châteauneuf-du-Pape, known for adding what to the blend?", a: "Spicy, peppery notes and acidity", o: ["Deep color and tannin", "Alcohol and body", "Floral aromatics"] },
+                    { q: "Which white grape is known for its high acidity and is often used to bring freshness to blends?", a: "Picpoul", o: ["Roussanne", "Marsanne", "Grenache Blanc"] },
+                    { q: "The grape 'Bourboulenc' is a white variety known for retaining its acidity well in the warm climate.", a: "True", o: ["False"] },
+                    { q: "Which grape, also found in Provence, is a common component in Southern Rhône rosés?", a: "Cinsault", o: ["Cabernet Sauvignon", "Merlot", "Pinot Noir"] },
+                    { q: "Which grape is the primary component in the red VDNs of Rasteau?", a: "Grenache Noir", o: ["Syrah", "Mourvèdre", "Muscat"] },
+                    { q: "The grape 'Clairette' provides what characteristic to white blends?", a: "Floral notes and high alcohol", o: ["High acidity and citrus notes", "Rich texture and nutty flavors", "Smoky, mineral notes"] },
+                    { q: "How many grape varieties (counting all color mutations) are permitted in Châteauneuf-du-Pape?", a: "18", o: ["13", "10", "22"] },
+                    { q: "Which grape variety is NOT one of the original 13 permitted in Châteauneuf-du-Pape?", a: "All are permitted", o: ["Grenache", "Syrah", "Mourvèdre"] },
+                    { q: "Which grape is known for producing wines with high alcohol potential?", a: "Grenache", o: ["Cinsault", "Syrah (in cool climates)", "Picpoul"] },
+                    { q: "The grape 'Vaccarèse' is a rare, dark-skinned variety permitted in Châteauneuf-du-Pape.", a: "True", o: ["False"] },
+                    { q: "The grape 'Terret Noir' contributes what to a blend?", a: "Light color and high acidity", o: ["Deep color and high tannin", "High alcohol and body", "Intense fruit flavors"] },
+                    { q: "Which grape is the most widely planted white variety in the Southern Rhône for AOC wines?", a: "Grenache Blanc", o: ["Viognier", "Roussanne", "Clairette"] },
+                    { q: "The grape 'Picardan' is a white variety known for its contribution to:", a: "Aromatic complexity and crispness", o: ["Body and alcohol", "Color and tannin", "Oxidative notes"] },
+                    { q: "Which grape is a key component of Tavel rosé?", a: "Grenache", o: ["Syrah", "Mourvèdre", "Cabernet Franc"] },
+                    { q: "The grape 'Muscardin' is a dark-skinned variety that adds what to the blend?", a: "Floral aromatics and freshness", o: ["Tannin and structure", "Alcohol and weight", "Deep, dark color"] },
+                    { q: "Which of the main red grapes has a drooping or trailing growth habit?", a: "Syrah", o: ["Grenache", "Mourvèdre", "Carignan"] },
+                    { q: "Which grape variety is known to struggle in the most extreme heat and drought of the south?", a: "Syrah", o: ["Grenache", "Mourvèdre", "Carignan"] },
+                    { q: "Which grape is the latest budding of the main red trio?", a: "Mourvèdre", o: ["Grenache", "Syrah", "Cinsault"] },
+                    { q: "Which grape variety is a parent of Syrah?", a: "Dureza", o: ["Pinot Noir", "Cabernet Franc", "Grenache"] }
+                ]
+            },
+            lawmaker: {
+                title: "The Lawmaker's Desk",
+                instructions: "Answer 10 multiple-choice questions about the appellation laws and winemaking regulations of the Southern Rhône.",
+                questions: [
+                    { q: "What is the minimum potential alcohol for red Châteauneuf-du-Pape?", a: "12.5%", o: ["12.0%", "13.0%", "13.5%"] },
+                    { q: "Which appellation is the only Cru in the Rhône dedicated exclusively to rosé?", a: "Tavel", o: ["Lirac", "Gigondas", "Rasteau"] },
+                    { q: "In Châteauneuf-du-Pape, what is the mandatory sorting of grapes called?", a: "Le tri", o: ["Le râpé", "La saignée", "Le délestage"] },
+                    { q: "What is the maximum permitted yield for red Châteauneuf-du-Pape?", a: "35 hl/ha", o: ["40 hl/ha", "45 hl/ha", "50 hl/ha"] },
+                    { q: "Which of these Crus was the first Côtes du Rhône Village to be promoted to its own appellation in 1971?", a: "Gigondas", o: ["Vacqueyras", "Cairanne", "Vinsobres"] },
+                    { q: "In Vacqueyras, what is the minimum percentage of Grenache required for red wines?", a: "50%", o: ["40%", "60%", "70%"] },
+                    { q: "Which winemaking practice is forbidden in Châteauneuf-du-Pape?", a: "Mechanical Harvesting", o: ["Whole-cluster fermentation", "Use of new oak", "Acidification"] },
+                    { q: "The process of adding grape spirit to arrest fermentation for VDN wines is called:", a: "Mutage", o: ["Chaptalization", "Bâtonnage", "Soutirage"] },
+                    { q: "Which of these is NOT one of the three tiers of the French quality pyramid?", a: "Vin de Terroir", o: ["Vin de France", "Indication Géographique Protégée (IGP)", "Appellation d'Origine Protégée (AOP)"] },
+                    { q: "How many communes are included in the foundational Côtes du Rhône AOP?", a: "171", o: ["95", "22", "18"] },
+                    { q: "What does the term 'râpé' refer to in Châteauneuf-du-Pape law?", a: "The rejected portion of the harvest", o: ["The press wine", "The free-run juice", "The grape stems"] },
+                    { q: "In Gigondas, what is the maximum percentage of Grenache allowed in the red blend?", a: "80%", o: ["70%", "90%", "100%"] },
+                    { q: "Which appellation was the first Cru recognized for all three colors of wine (red, white, rosé)?", a: "Lirac", o: ["Tavel", "Gigondas", "Vacqueyras"] },
+                    { q: "The term 'Hors d'âge' on a bottle of Rasteau VDN indicates a minimum aging period of:", a: "Five years", o: ["Three years", "Seven years", "Ten years"] },
+                    { q: "How many villages are permitted to append their name to the 'Côtes du Rhône Villages' AOP?", a: "22", o: ["18", "95", "171"] },
+                    { q: "Which corrective winemaking practice is legally permitted but rarely necessary in the Southern Rhône?", a: "Chaptalization", o: ["Acidification", "Watering down", "Reverse osmosis"] },
+                    { q: "Which corrective winemaking practice is more common in hot vintages to ensure balance?", a: "Acidification", o: ["Chaptalization", "Amelioration", "De-acidification"] },
+                    { q: "What is the minimum residual sugar for Muscat de Beaumes-de-Venise?", a: "100 g/L", o: ["80 g/L", "110 g/L", "125 g/L"] },
+                    { q: "Which of these is the highest tier in the specific Rhône Valley hierarchy?", a: "Cru", o: ["Côtes du Rhône Villages + Named Village", "Côtes du Rhône Villages", "Côtes du Rhône"] },
+                    { q: "The red VDN style from Rasteau, made mostly from Grenache Noir, is called:", a: "Grenat", o: ["Tuilé", "Ambré", "Rancio"] },
+                    { q: "What is the minimum planting density in Châteauneuf-du-Pape?", a: "3,000 vines per hectare", o: ["2,500 vines per hectare", "4,000 vines per hectare", "5,000 vines per hectare"] },
+                    { q: "Irrigation is permitted in many Crus under what condition?", a: "By prefectural decree during severe drought", o: ["At any time to increase yields", "Only for white grape varieties", "It is completely forbidden"] },
+                    { q: "In Gigondas, Syrah and/or Mourvèdre must make up a minimum of what percentage of the blend?", a: "15%", o: ["10%", "20%", "25%"] },
+                    { q: "The official rulebook for an AOC is called the:", a: "Cahier des charges", o: ["Syndicat", "Protocole", "Règlement"] },
+                    { q: "Which was the most recently elevated Cru (as of late 2024)?", a: "Laudun", o: ["Cairanne", "Vinsobres", "Rasteau"] },
+                    { q: "What is the maximum yield for red Gigondas and Vacqueyras?", a: "36 hl/ha", o: ["35 hl/ha", "38 hl/ha", "40 hl/ha"] },
+                    { q: "A 'négociant' is a wine merchant who:", a: "Buys grapes or wine to bottle under their own label", o: ["Only grows their own grapes", "Specializes in vineyard management", "Is a certified sommelier"] },
+                    { q: "The term 'Tuilé' on a Rasteau VDN indicates:", a: "A tawny, oxidatively aged red style", o: ["An amber, oxidatively aged white style", "A young, fresh red style", "A sweet, unfortified wine"] },
+                    { q: "Which AOP was formerly known as Côtes du Tricastin?", a: "Grignan-les-Adhémar", o: ["Ventoux", "Luberon", "Côtes du Vivarais"] },
+                    { q: "The use of whole-cluster fermentation is a hallmark of which style?", a: "Traditionalist", o: ["Modernist", "Cooperative", "International"] },
+                    { q: "The use of small, new oak barrels (barriques) is more associated with which style?", a: "Modernist", o: ["Traditionalist", "Natural", "Ancestral"] },
+                    { q: "What is the name of the official growers' association for an appellation?", a: "Syndicat", o: ["Coopérative", "Confrérie", "Chambre"] },
+                    { q: "The foundational regional AOP, covering 171 communes, is:", a: "Côtes du Rhône", o: ["Côtes du Rhône Villages", "Cru", "IGP Méditerranée"] },
+                    { q: "What is the minimum actual alcohol for Muscat de Beaumes-de-Venise?", a: "15%", o: ["12.5%", "14%", "16%"] },
+                    { q: "In Vacqueyras, the GSM trio must account for a minimum of what percentage of the blend?", a: "90%", o: ["80%", "85%", "95%"] },
+                    { q: "Which Cru was the second Côtes du Rhône Village to be promoted, in 1990?", a: "Vacqueyras", o: ["Gigondas", "Cairanne", "Rasteau"] },
+                    { q: "The term 'Ambré' on a Rasteau VDN indicates:", a: "An amber, oxidatively aged white style", o: ["A tawny, oxidatively aged red style", "A young, fresh white style", "A rosé VDN"] },
+                    { q: "The AOP system was officially established in what year?", a: "1936", o: ["1923", "1933", "1945"] },
+                    { q: "The 'Côtes du Rhône Villages' AOP covers how many communes?", a: "95", o: ["22", "171", "18"] },
+                    { q: "The use of ovoid concrete tanks ('concrete eggs') is a tool often used by which style of producer?", a: "Modernist", o: ["Traditionalist", "Cooperative", "Historic"] },
+                    { q: "Which of these is a legal requirement for Tavel rosé?", a: "It must be a blended wine", o: ["It must be 100% Grenache", "It must be aged in oak", "It must have residual sugar"] },
+                    { q: "The release date for red Gigondas is no earlier than:", a: "March 15 of the year following harvest", o: ["December 1 of the year of harvest", "January 15 of the year following harvest", "May 1 of the year following harvest"] },
+                    { q: "The release date for red Vacqueyras is no earlier than:", a: "January 15 of the year following harvest", o: ["December 1 of the year of harvest", "March 15 of the year following harvest", "June 1 of the year following harvest"] },
+                    { q: "The neutral grape spirit used for mutage must be at least what ABV?", a: "96%", o: ["85%", "90%", "99%"] },
+                    { q: "Which of these is the intermediate tier of the French quality pyramid?", a: "Indication Géographique Protégée (IGP)", o: ["Vin de France", "Appellation d'Origine Protégée (AOP)", "Grand Cru"] },
+                    { q: "Which of these is NOT a Southern Rhône Cru?", a: "Hermitage", o: ["Lirac", "Vinsobres", "Cairanne"] },
+                    { q: "The rules for Châteauneuf-du-Pape were first drawn up by:", a: "Baron Pierre Le Roy de Boiseaumarié", o: ["Pope John XXII", "Kermit Lynch", "Jules Lavalle"] },
+                    { q: "The term 'Vin de Pays' was the former name for which classification?", a: "IGP", o: ["AOP", "Vin de France", "Cru"] },
+                    { q: "What is the maximum yield for the newly permitted white wines of Gigondas?", a: "40 hl/ha", o: ["35 hl/ha", "36 hl/ha", "42 hl/ha"] },
+                    { q: "Which of these named villages is permitted to append its name to the Côtes du Rhône Villages AOP?", a: "Sablet", o: ["Gigondas", "Tavel", "Châteauneuf-du-Pape"] }
+                ]
+            },
+            gastronome: {
+                title: "The Gastronome's Table",
+                instructions: "Answer 10 multiple-choice questions about the cuisine, ingredients, and classic pairings of the Southern Rhône. After a correct answer, you may have the option to generate an AI explanation.",
+                questions: [
+                    { q: "Which hearty beef stew, slow-cooked in red wine and herbs, is a quintessential dish of the region?", a: "Daube Provençale", o: ["Boeuf Bourguignon", "Coq au Vin", "Pot-au-Feu"] },
+                    { q: "A mature, structured red from Gigondas or Châteauneuf-du-Pape is the classic pairing for which dish?", a: "Daube Provençale", o: ["Bouillabaisse", "Tian de Légumes", "Tapenade"] },
+                    { q: "Which full-bodied, structured rosé is the classic pairing for the complex fish stew Bouillabaisse?", a: "Tavel", o: ["Provence Rosé", "White Zinfandel", "Rosé d'Anjou"] },
+                    { q: "What is the name of the spread made from olives, capers, and anchovies?", a: "Tapenade", o: ["Pissaladière", "Anchoïade", "Rouille"] },
+                    { q: "The name 'Tapenade' comes from the Provençal word for what ingredient?", a: "Capers", o: ["Olives", "Anchovies", "Garlic"] },
+                    { q: "Which of these is a famous type of melon from the region with PGI status?", a: "Melon de Cavaillon", o: ["Melon de Lectoure", "Melon de Guadeloupe", "Charentais Melon"] },
+                    { q: "The region's traditional pomace brandy, distilled from grape skins and seeds, is called:", a: "Marc de Provence", o: ["Cognac", "Armagnac", "Calvados"] },
+                    { q: "What is the quintessential anise-flavored spirit of Provence, often served as an apéritif?", a: "Pastis", o: ["Absinthe", "Génépi", "Chartreuse"] },
+                    { q: "The aromatic signature of Provençal cuisine comes from a mixture of herbs known as:", a: "Herbes de Provence", o: ["Fines herbes", "Bouquet garni", "Persillade"] },
+                    { q: "Which of these is NOT a typical ingredient in Herbes de Provence?", a: "Cilantro", o: ["Thyme", "Rosemary", "Savory"] },
+                    { q: "A 'Tian de Légumes' is a type of:", a: "Baked vegetable gratin", o: ["Fish stew", "Cured sausage", "Goat cheese"] },
+                    { q: "Which of these local ingredients has its own PDO status?", a: "Figue de Solliès", o: ["Bresse Chicken", "Piment d'Espelette", "Lentils du Puy"] },
+                    { q: "The garlic-saffron mayonnaise served with Bouillabaisse is called:", a: "Rouille", o: ["Aïoli", "Tapenade", "Pistou"] },
+                    { q: "A light, fruity Côtes du Rhône red or rosé is a classic pairing for which dish?", a: "Tian de Légumes", o: ["Daube Provençale", "Bouillabaisse", "Roasted Lamb"] },
+                    { q: "A robust Vacqueyras red is an ideal pairing for:", a: "Agneau de Provence (Roasted Lamb)", o: ["Oysters", "Grilled Sardines", "Goat Cheese Salad"] },
+                    { q: "The herbal liqueur 'Farigoule de Forcalquier' is flavored primarily with:", a: "Wild Thyme", o: ["Rosemary", "Lavender", "Wormwood"] },
+                    { q: "The alpine liqueur 'Génépi' is made from which plant?", a: "Wormwood (Artemisia)", o: ["Gentian Root", "Juniper Berries", "Anise"] },
+                    { q: "The milky, opaque effect that occurs when water is added to Pastis is called:", a: "The louche", o: ["The bloom", "The cloud", "The ghost"] },
+                    { q: "The 'garrigue' note in a wine refers to the same aromatic compounds found in:", a: "Herbes de Provence", o: ["Black olives", "Saffron", "Truffles"] },
+                    { q: "Which of these is an ancient variety of spelt wheat with PGI status from the region?", a: "Petit épeautre de Haute-Provence", o: ["Blé noir de Bretagne", "Riz de Camargue", "Farine de châtaigne de Corse"] },
+                    { q: "The bony rockfish 'rascasse' is a key ingredient in which dish?", a: "Bouillabaisse", o: ["Brandade de morue", "Soupe de poisson", "Bourride"] },
+                    { q: "What is the primary cooking fat used in Provençal cuisine?", a: "Olive Oil", o: ["Butter", "Lard", "Duck Fat"] },
+                    { q: "A rich, aromatic white Châteauneuf-du-Pape is an alternative pairing for which dish?", a: "Bouillabaisse", o: ["Daube Provençale", "Tapenade", "Roasted Lamb"] },
+                    { q: "Distillation of 'Marc de Provence' often takes place in:", a: "Mobile stills that travel to estates", o: ["Large industrial distilleries", "Underground cellars", "Monastic facilities"] },
+                    { q: "The term 'Farigoule' is the local dialect word for:", a: "Thyme", o: ["Rosemary", "Fennel", "Lavender"] },
+                    { q: "Which activity is culturally synonymous with drinking Pastis on a sunny terrace?", a: "Playing pétanque", o: ["Playing chess", "Reading poetry", "Watching bullfights"] },
+                    { q: "Which of these is NOT a foundational flavor of Provençal cuisine?", a: "Chili peppers", o: ["Garlic", "Olive oil", "Sun-ripened tomatoes"] },
+                    { q: "The dish 'Daube' is a form of:", a: "Stew", o: ["Roast", "Gratin", "Terrine"] },
+                    { q: "Which protected olive product comes from the region?", a: "Olive de Nîmes (PDO)", o: ["Olives de Nyons (PDO)", "Olives de Kalamata (PDO)", "Olives de Lucques"] },
+                    { q: "The overall gastronomic culture of the Southern Rhône can be described as:", a: "A holistic expression of the same ecosystem as the wine", o: ["Heavily influenced by Italian cuisine", "Focused primarily on seafood", "Distinct and separate from the wine culture"] },
+                    { q: "Which ingredient provides the distinctive yellow color and flavor to the broth of Bouillabaisse?", a: "Saffron", o: ["Turmeric", "Paprika", "Mustard"] },
+                    { q: "A crisp, dry rosé is a refreshing contrast to the salty, savory flavors of:", a: "Tapenade", o: ["Daube Provençale", "Crème brûlée", "Foie gras"] },
+                    { q: "Which meat is most famously associated with Provence and often roasted with garlic and rosemary?", a: "Lamb", o: ["Pork", "Duck", "Beef"] },
+                    { q: "The spirit 'Marc' is classified as a:", a: "Pomace brandy", o: ["Fruit brandy", "Grain spirit", "Liqueur"] },
+                    { q: "The flavor profile of 'Génépi' is best described as:", a: "Herbal and slightly bitter", o: ["Sweet and fruity", "Spicy and warm", "Anise-flavored"] },
+                    { q: "The main ingredients of a 'Tian' are typically:", a: "Sliced summer vegetables", o: ["Minced meat and rice", "Fish and potatoes", "Fruit and custard"] },
+                    { q: "The pairing of a powerful red wine with 'Daube' is an example of what kind of pairing principle?", a: "Congruent pairing (matching intensity)", o: ["Contrasting pairing (cutting richness)", "Flavor bridging", "Textural opposition"] },
+                    { q: "Which of these is a key aromatic in roasted 'Agneau de Provence' that is also a classic note in the region's red wines?", a: "Rosemary", o: ["Mint", "Dill", "Cilantro"] },
+                    { q: "The 'apéritif' is a French cultural tradition of:", a: "A pre-dinner drink meant to stimulate the appetite", o: ["A post-dinner digestive drink", "A mid-afternoon snack", "A celebratory toast"] },
+                    { q: "The 'louche' effect in Pastis is a chemical reaction called:", a: "Emulsion (Ouzo effect)", o: ["Precipitation", "Oxidation", "Polymerization"] },
+                ]
+            },
+            critic: {
+                title: "The Critic's Corner",
+                instructions: "Answer 10 multiple-choice questions about the vintages, producers, and market context of the Southern Rhône. After a correct answer, you may have the option to generate an AI tasting note.",
+                questions: [
+                    { q: "Which producer is famous for making 100% Grenache from unique, cool, sandy soils?", a: "Château Rayas", o: ["Château de Beaucastel", "Domaine du Vieux Télégraphe", "Clos des Papes"] },
+                    { q: "Which iconic estate is known for using a high proportion of Mourvèdre and all other permitted varieties in its blend?", a: "Château de Beaucastel", o: ["Château Rayas", "Henri Bonneau", "Domaine Charvin"] },
+                    { q: "Which vintage is widely considered a benchmark, 'exceptional' year for the Southern Rhône, combining power with freshness?", a: "2016", o: ["2014", "2018", "2021"] },
+                    { q: "The 2021 vintage was particularly challenging due to what climatic event?", a: "Severe and widespread spring frosts", o: ["Extreme heat and drought", "Rampant mildew from a wet spring", "A cool, wet summer"] },
+                    { q: "The top cuvée from Château de Beaucastel is the legendary:", a: "Hommage à Jacques Perrin", o: ["Réserve des Célestins", "Cuvée da Capo", "Château Rayas Réservé"] },
+                    { q: "The late Henri Bonneau was the spiritual godfather of which style of Châteauneuf-du-Pape?", a: "Traditionalist", o: ["Modernist", "Natural Wine", "Cooperative"] },
+                    { q: "Which producer is a benchmark for elegance and consistency, famously producing only one red and one white Châteauneuf-du-Pape?", a: "Clos des Papes", o: ["Domaine du Vieux Télégraphe", "Château Rayas", "Château de Beaucastel"] },
+                    { q: "The 2018 vintage was highly variable due to what major issue?", a: "Rampant mildew from an extremely wet spring", o: ["Severe drought", "Spring frost", "Poor flowering (coulure)"] },
+                    { q: "Domaine du Vieux Télégraphe is synonymous with the powerful style derived from which famous stony plateau?", a: "La Crau", o: ["Le Coudoulet", "Pignan", "Les Garrigues"] },
+                    { q: "Which vintage was marked by catastrophic 'coulure' for Grenache, leading to very low yields?", a: "2013", o: ["2012", "2015", "2016"] },
+                    { q: "Which of these is considered a 'Value Champion' from Gigondas?", a: "Château de St-Cosme", o: ["Domaine le Sang des Cailloux", "Domaine Gramenon", "Château Rayas"] },
+                    { q: "A group of 'Rising Star' producers like Domaine l'Anglore are leading a natural wine revolution in which appellation?", a: "Tavel", o: ["Gigondas", "Vacqueyras", "Rasteau"] },
+                    { q: "The 2010 vintage is best described as:", a: "Powerful, structured, and age-worthy", o: ["Light, elegant, and for early drinking", "Sensuous, opulent, and silky", "Lean, acidic, and challenging"] },
+                    { q: "The top cuvée from the late Henri Bonneau is:", a: "Réserve des Célestins", o: ["Hommage à Jacques Perrin", "Château Rayas Réservé", "La Landonne"] },
+                    { q: "Which two vintages are often compared for their combination of power and elegance?", a: "2010 and 2005", o: ["2014 and 2008", "2011 and 2012", "2017 and 2022"] },
+                    { q: "The 2007 vintage is known for being:", a: "Sensuous, opulent, and ripe", o: ["Classic, structured, and firm", "Light, acidic, and lean", "Powerful but lacking finesse"] },
+                    { q: "The increasing frequency of extreme weather events suggests that the 'classic, balanced' vintage is becoming:", a: "Rarer", o: ["More common", "Unchanged", "The new norm"] },
+                    { q: "Which producer is NOT considered one of the iconic 'First Growths' of Châteauneuf-du-Pape?", a: "Domaine Gramenon", o: ["Château Rayas", "Clos des Papes", "Château de Beaucastel"] },
+                    { q: "The 2022 vintage was primarily characterized by:", a: "Extreme heat and drought", o: ["Severe frost", "Heavy rainfall", "A long, cool growing season"] },
+                    { q: "Which producer is a 'Value Champion' from Vacqueyras?", a: "Domaine le Sang des Cailloux", o: ["Domaine Santa Duc", "Domaine Brusset", "Domaine Chaume-Arnaud"] },
+                    { q: "The wines of Château Rayas are often described as the most '...' of Châteauneuf-du-Pape.", a: "Burgundian", o: ["Bordelais", "Californian", "Australian"] },
+                    { q: "Which vintage was a difficult, cool, and wet year that required chaptalization?", a: "2008", o: ["2007", "2009", "2010"] },
+                    { q: "The 2019 vintage was characterized by:", a: "A hot year with two significant heatwaves", o: ["A cool, wet spring", "A balanced, moderate summer", "Late season hail"] },
+                    { q: "Which of these producers is considered a 'Rising Star' focusing on agroforestry and biodynamics in Châteauneuf-du-Pape?", a: "Domaine de la Solitude", o: ["Henri Bonneau", "Château Rayas", "Domaine du Vieux Télégraphe"] },
+                    { q: "The 2015 vintage is best described as:", a: "Rich, plush, and opulent", o: ["Lean, structured, and acidic", "Light, fresh, and elegant", "Variable due to disease"] },
+                    { q: "The 2017 vintage was a year of extremes, featuring both spring frost and:", a: "Severe drought and coulure", o: ["Heavy rain and mildew", "A long, cool harvest", "Perfect ripening conditions"] },
+                    { q: "The 2020 vintage is known for being more '...' than the powerful 2019.", a: "Balanced and fresh", o: ["Concentrated and rich", "Lean and acidic", "Opulent and silky"] },
+                    { q: "The primary red fruit flavor in a classic Southern Rhône red is:", a: "Cherry and raspberry", o: ["Blackcurrant and cassis", "Cranberry and redcurrant", "Blueberry and blackberry"] },
+                    { q: "White wines from the Southern Rhône are often described as:", a: "Rich and textural", o: ["Lean and mineral-driven", "Crisp and high-acid", "Oaky and buttery"] },
+                    { q: "The 'drink/hold' recommendation for the exceptional 2016 vintage is:", a: "Hold", o: ["Drink", "Past Peak", "Drink or Hold"] },
+                    { q: "The 'drink/hold' recommendation for the challenging 2014 vintage is:", a: "Drink/Past Peak", o: ["Hold", "Cellar", "Drink or Hold"] },
+                    { q: "Which of these is a 'Value Champion' from the Côtes du Rhône appellation?", a: "Domaine Gramenon", o: ["Château de St-Cosme", "Domaine le Sang des Cailloux", "Clos des Papes"] },
+                    { q: "Who is the current winemaker/manager of Clos des Papes?", a: "Paul-Vincent Avril", o: ["Emmanuel Reynaud", "Marc Perrin", "Daniel Brunier"] },
+                    { q: "The Perrin family owns which iconic estate?", a: "Château de Beaucastel", o: ["Château Rayas", "Clos des Papes", "Domaine du Vieux Télégraphe"] },
+                    { q: "The Brunier family is associated with which estate?", a: "Domaine du Vieux Télégraphe", o: ["Château de Beaucastel", "Château Rayas", "Henri Bonneau"] },
+                    { q: "The Reynaud family is associated with which estate?", a: "Château Rayas", o: ["Château de Beaucastel", "Clos des Papes", "Domaine du Vieux Télégraphe"] },
+                    { q: "Which vintage produced lighter, elegant, classic-style wines but with variable quality?", a: "2021", o: ["2020", "2019", "2018"] },
+                    { q: "The 2009 vintage is known for being:", a: "Rich, concentrated, and luscious", o: ["Firm, classic, and fresh", "Lean, acidic, and difficult", "Balanced and charming"] },
+                    { q: "The 2012 vintage is considered:", a: "A classic, balanced, and charming year", o: ["A powerful, structured, and age-worthy year", "A rich, opulent, and hot year", "A light, lean, and cool year"] },
+                    { q: "The 2004 vintage is described as:", a: "Firm, classic-styled with good freshness", o: ["Opulent, ripe, and silky", "Powerful, concentrated, and age-worthy", "Lean, acidic, and for early drinking"] },
+                ]
+            },
+        };
+
+        const mainMenu = document.getElementById('main-menu');
+        const gameScreen = document.getElementById('game-screen');
+        const modalContainer = document.getElementById('modal-container');
+        const modalContentWrapper = document.getElementById('modal-content-wrapper');
+        const aiSettingsBtn = document.getElementById('ai-settings-btn');
+
+        let currentModule;
+        let currentQuestionIndex;
+        let score;
+        let questions = [];
+        let userTimeline = [];
+        let flashcardDeck = [];
+        let currentFlashcardIndex = 0;
+        let userApiKey = localStorage.getItem('geminiApiKey') || '';
+
+        // --- Event Listeners ---
+        document.querySelectorAll('.module-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const module = button.dataset.module;
+                if (module === 'flashcard') {
+                    showFlashcardTopicSelection();
+                } else {
+                    showInstructionalModal(module);
+                }
+            });
+        });
+
+        aiSettingsBtn.addEventListener('click', showAiSettingsModal);
+        
+        // --- Modal Functions ---
+        function showModal(content) {
+            modalContentWrapper.innerHTML = content;
+            modalContainer.classList.remove('hidden');
+        }
+
+        function hideModal() {
+            modalContainer.classList.add('hidden');
+            modalContentWrapper.innerHTML = '';
+        }
+        
+        function showWelcomeModal() {
+            if (sessionStorage.getItem('welcomed')) return;
+            const content = `
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold mb-4 text-purple-400">Welcome to the Gauntlet!</h2>
+                    <p class="mb-4 text-gray-300">This is "The Southern Rhône: A Wine Master's Challenge," an interactive study game designed for advanced wine students.</p>
+                    <p class="mb-6 text-gray-300">Test your knowledge across history, terroir, grapes, law, and more. All questions are derived from a comprehensive research document on the region. Good luck!</p>
+                    <button onclick="closeWelcomeModal()" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Begin</button>
+                </div>
+            `;
+            showModal(content);
+        }
+
+        function closeWelcomeModal() {
+            sessionStorage.setItem('welcomed', 'true');
+            hideModal();
+        }
+
+        function showInstructionalModal(module) {
+            currentModule = module;
+            const moduleData = gameData[module];
+            const content = `
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold mb-4 text-purple-400">${moduleData.title}</h2>
+                    <p class="mb-6 text-gray-300">${moduleData.instructions}</p>
+                    <button onclick="startGame()" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Start Challenge</button>
+                </div>
+            `;
+            showModal(content);
+        }
+
+        function showEndGameModal() {
+            const moduleData = gameData[currentModule];
+            const content = `
+                <div class="p-6 text-center">
+                    <h2 class="text-2xl font-bold mb-4 text-purple-400">Module Complete!</h2>
+                    <p class="text-lg mb-2 text-gray-300">You completed "${moduleData.title}".</p>
+                    <p class="text-4xl font-bold mb-6">Score: ${score} / ${questions.length}</p>
+                    <p class="mb-6 text-gray-400">Play again to get a new set of questions and improve your score!</p>
+                    <button onclick="returnToMenu()" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Main Menu</button>
+                </div>
+            `;
+            showModal(content);
+        }
+
+        function showAiSettingsModal() {
+            const content = `
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold text-purple-400">AI Settings</h2>
+                        <button onclick="hideModal()" class="text-gray-400 hover:text-white">&times;</button>
+                    </div>
+                    <p class="mb-4 text-gray-300">To use the AI-powered features, please enter your Google AI Studio API key. You can get a key at <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-purple-400 hover:underline">aistudio.google.com/app/apikey</a>.</p>
+                    <p class="text-sm text-yellow-400 mb-4">Security Reminder: Treat your API key like a password. It is saved in your browser's local storage for convenience but is not transmitted anywhere else.</p>
+                    <div class="mb-4">
+                        <label for="api-key-input" class="block text-sm font-medium text-gray-300 mb-1">Google AI API Key</label>
+                        <input type="password" id="api-key-input" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white" value="${userApiKey}">
+                    </div>
+                    <button onclick="saveApiKey()" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Save and Close</button>
+                </div>
+            `;
+            showModal(content);
+        }
+        
+        function saveApiKey() {
+            userApiKey = document.getElementById('api-key-input').value;
+            localStorage.setItem('geminiApiKey', userApiKey);
+            hideModal();
+        }
+
+        // --- Game Flow ---
+        function startGame() {
+            hideModal();
+            mainMenu.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            score = 0;
+            currentQuestionIndex = 0;
+
+            if (currentModule === 'historian') {
+                questions = shuffleArray([...gameData.historian.questions]).slice(0, 1); // Only one timeline question per game
+                loadHistorianQuestion();
+            } else {
+                questions = shuffleArray([...gameData[currentModule].questions]).slice(0, 10);
+                loadQuestion();
+            }
+        }
+
+        function returnToMenu() {
+            hideModal();
+            gameScreen.classList.add('hidden');
+            mainMenu.classList.remove('hidden');
+            gameScreen.innerHTML = '';
+        }
+
+        // --- Multiple Choice Logic ---
+        function loadQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showEndGameModal();
+                return;
+            }
+
+            const q = questions[currentQuestionIndex];
+            const options = shuffleArray([q.a, ...q.o]);
+            
+            let aiButtonHtml = '';
+            if (q.aiPrompt) {
+                aiButtonHtml = `<button onclick="handleAiRequest('${q.a}')" class="mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded">✨ Generate AI Insight</button>`;
+            }
+
+            gameScreen.innerHTML = `
+                <div class="w-full max-w-3xl">
+                    <p class="text-right text-gray-400 mb-2">${currentQuestionIndex + 1} / ${questions.length} | Score: ${score}</p>
+                    <div class="bg-gray-800 p-8 rounded-lg">
+                        <p class="text-xl md:text-2xl font-medium mb-6">${q.q}</p>
+                        <div class="space-y-4">
+                            ${options.map(option => `
+                                <button class="block w-full text-left bg-gray-700 p-4 rounded-lg hover:bg-purple-700 transition-colors duration-200" onclick="checkAnswer('${option}')">
+                                    ${option}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <div id="feedback-container" class="mt-6"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function checkAnswer(selectedOption) {
+            const q = questions[currentQuestionIndex];
+            const isCorrect = selectedOption === q.a;
+            const feedbackContainer = document.getElementById('feedback-container');
+            
+            let feedbackHtml = '';
+            if (isCorrect) {
+                score++;
+                feedbackHtml = `<div class="p-4 rounded-lg bg-green-900 border border-green-700">
+                                    <p class="font-bold text-green-300">Correct!</p>
+                                    <p class="text-green-400">${q.a}</p>`;
+                
+                // AI Button Logic
+                if (currentModule === 'ampelographer') {
+                    feedbackHtml += `<button onclick="handleAiRequest('ampelography', '${q.a}')" class="mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded text-sm">📚 Generate Ampelography Profile for ${q.a}</button>`;
+                } else if (currentModule === 'critic') {
+                     feedbackHtml += `<button onclick="handleAiRequest('tastingNote', '${q.a}')" class="mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded text-sm">✨ Generate Tasting Note for ${q.a}</button>`;
+                } else if (currentModule === 'gastronome') {
+                    feedbackHtml += `<button onclick="handleAiRequest('pairing', '${q.a}')" class="mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded text-sm">🍴 Explain the Pairing for ${q.a}</button>`;
+                }
+
+                feedbackHtml += `</div>`;
+            } else {
+                feedbackHtml = `<div class="p-4 rounded-lg bg-red-900 border border-red-700">
+                                    <p class="font-bold text-red-300">Incorrect.</p>
+                                    <p class="text-red-400">The correct answer was: ${q.a}</p>
+                                </div>`;
+            }
+
+            feedbackContainer.innerHTML = feedbackHtml;
+            document.querySelectorAll('#game-screen button').forEach(btn => btn.disabled = true);
+
+            setTimeout(() => {
+                currentQuestionIndex++;
+                loadQuestion();
+            }, isCorrect ? 3000 : 3500);
+        }
+        
+        // --- Historian's Scroll Logic ---
+        function loadHistorianQuestion() {
+            const q = questions[0]; // Only one timeline question
+            userTimeline = [];
+            const availableEvents = shuffleArray([...q.events]);
+
+            gameScreen.innerHTML = `
+                <div class="w-full max-w-4xl">
+                     <p class="text-center text-gray-400 mb-4">Question 1 / 1</p>
+                    <div class="bg-gray-800 p-6 rounded-lg">
+                        <p class="text-xl text-center font-medium mb-6">${q.question}</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="font-bold text-lg mb-2 text-purple-400 text-center">Available Events</h3>
+                                <div id="available-events" class="space-y-2">
+                                    ${availableEvents.map((event, index) => `
+                                        <button data-index="${index}" class="timeline-item w-full text-left bg-gray-700 p-3 rounded hover:bg-purple-800 transition-colors duration-200">
+                                            ${event.text}
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg mb-2 text-purple-400 text-center">Your Timeline (Earliest to Latest)</h3>
+                                <div id="user-timeline" class="space-y-2 bg-gray-900 p-3 rounded-lg min-h-[200px]">
+                                    <!-- User's ordered events will appear here -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-6">
+                            <button id="submit-timeline" class="bg-purple-700 hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-lg" onclick="checkTimeline()">Submit</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.querySelectorAll('#available-events .timeline-item').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const eventIndex = e.currentTarget.dataset.index;
+                    const event = availableEvents[eventIndex];
+                    if (!userTimeline.includes(event)) {
+                        userTimeline.push(event);
+                        e.currentTarget.classList.add('selected', 'opacity-50', 'cursor-not-allowed');
+                        e.currentTarget.disabled = true;
+                        renderUserTimeline();
+                    }
+                });
+            });
+        }
+        
+        function renderUserTimeline() {
+            const timelineContainer = document.getElementById('user-timeline');
+            timelineContainer.innerHTML = userTimeline.map((event, index) => `
+                <div class="bg-purple-900 p-3 rounded flex items-center justify-between">
+                    <span>${index + 1}. ${event.text}</span>
+                    <button class="text-red-400 hover:text-red-200 font-bold" onclick="removeFromTimeline(${index})">&times;</button>
+                </div>
+            `).join('');
+        }
+
+        function removeFromTimeline(index) {
+            const removedEvent = userTimeline.splice(index, 1)[0];
+            const originalButton = document.querySelector(`#available-events .timeline-item[data-index='${questions[0].events.findIndex(e => e.text === removedEvent.text)}']`);
+            if (originalButton) {
+                originalButton.classList.remove('selected', 'opacity-50', 'cursor-not-allowed');
+                originalButton.disabled = false;
+            }
+            renderUserTimeline();
+        }
+
+        function checkTimeline() {
+            const q = questions[0];
+            const correctTimeline = [...q.events].sort((a, b) => a.date - b.date);
+            let isCorrect = userTimeline.length === correctTimeline.length;
+            if (isCorrect) {
+                for (let i = 0; i < correctTimeline.length; i++) {
+                    if (userTimeline[i].text !== correctTimeline[i].text) {
+                        isCorrect = false;
+                        break;
+                    }
+                }
+            }
+            score = isCorrect ? 1 : 0;
+            
+            const feedbackContent = `
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold mb-4 ${isCorrect ? 'text-green-400' : 'text-red-400'}">${isCorrect ? 'Correct!' : 'Incorrect'}</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="font-bold text-lg mb-2 text-purple-400">Your Timeline</h3>
+                            <ol class="list-decimal list-inside space-y-2">
+                                ${userTimeline.map(e => `<li class="p-2 bg-gray-700 rounded">${e.text}</li>`).join('')}
+                            </ol>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg mb-2 text-purple-400">Correct Timeline</h3>
+                            <ol class="list-decimal list-inside space-y-2">
+                                ${correctTimeline.map(e => `<li class="p-2 bg-gray-700 rounded">${e.text} <span class="text-gray-400 text-sm">(${e.date > 0 ? e.date : Math.abs(e.date) + ' BC'})</span></li>`).join('')}
+                            </ol>
+                        </div>
+                    </div>
+                    <button onclick="showEndGameModal()" class="mt-6 w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Continue</button>
+                </div>
+            `;
+            showModal(feedbackContent);
+        }
+
+        // --- Flashcard Logic ---
+        function showFlashcardTopicSelection() {
+            const topics = Object.keys(gameData);
+            const content = `
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold mb-4 text-purple-400">Build Your Flashcard Deck</h2>
+                    <p class="mb-6 text-gray-300">Select the topics you want to study. All questions from the selected modules will be included.</p>
+                    <div id="flashcard-topics" class="space-y-2 mb-4">
+                        ${topics.map(topic => `
+                            <label class="flex items-center bg-gray-700 p-3 rounded-lg hover:bg-gray-600 cursor-pointer">
+                                <input type="checkbox" class="form-checkbox h-5 w-5 text-purple-600 bg-gray-800 border-gray-600 rounded focus:ring-purple-500" data-topic="${topic}">
+                                <span class="ml-3 text-white">${gameData[topic].title}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                     <label class="flex items-center bg-gray-700 p-3 rounded-lg hover:bg-gray-600 cursor-pointer mb-6">
+                        <input type="checkbox" id="select-all-topics" class="form-checkbox h-5 w-5 text-purple-600 bg-gray-800 border-gray-600 rounded focus:ring-purple-500">
+                        <span class="ml-3 text-white font-bold">Select All</span>
+                    </label>
+                    <button onclick="startFlashcardSession()" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Start Studying</button>
+                </div>
+            `;
+            showModal(content);
+            
+            document.getElementById('select-all-topics').addEventListener('change', (e) => {
+                document.querySelectorAll('#flashcard-topics input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = e.target.checked;
+                });
+            });
+        }
+
+        function startFlashcardSession() {
+            flashcardDeck = [];
+            const selectedTopics = Array.from(document.querySelectorAll('#flashcard-topics input:checked')).map(cb => cb.dataset.topic);
+
+            if (selectedTopics.length === 0) {
+                alert("Please select at least one topic.");
+                return;
+            }
+
+            selectedTopics.forEach(topic => {
+                if (gameData[topic].questions) {
+                    if (topic === 'historian') {
+                        gameData[topic].questions.forEach(q => {
+                            const correctAnswer = [...q.events].sort((a,b) => a.date - b.date).map((e,i) => `${i+1}. ${e.text} (${e.date > 0 ? e.date : Math.abs(e.date) + ' BC'})`).join('<br>');
+                            flashcardDeck.push({ q: q.question, a: correctAnswer });
+                        });
+                    } else {
+                        gameData[topic].questions.forEach(q => {
+                            flashcardDeck.push({ q: q.q, a: q.a });
+                        });
+                    }
+                }
+            });
+
+            flashcardDeck = shuffleArray(flashcardDeck);
+            currentFlashcardIndex = 0;
+            hideModal();
+            mainMenu.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            loadFlashcard();
+        }
+
+        function loadFlashcard() {
+            if (flashcardDeck.length === 0) {
+                gameScreen.innerHTML = `<div class="text-center">
+                    <p class="text-2xl mb-4">No topics selected.</p>
+                    <button onclick="returnToMenu()" class="bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Main Menu</button>
+                </div>`;
+                return;
+            }
+            const card = flashcardDeck[currentFlashcardIndex];
+            gameScreen.innerHTML = `
+                <div class="w-full max-w-2xl flex flex-col items-center">
+                    <p class="text-gray-400 mb-4">${currentFlashcardIndex + 1} / ${flashcardDeck.length}</p>
+                    <div class="flashcard-container w-full h-80 mb-6">
+                        <div class="flashcard" onclick="this.classList.toggle('is-flipped')">
+                            <div class="flashcard-face flashcard-front text-2xl font-semibold text-center">${card.q}</div>
+                            <div class="flashcard-face flashcard-back text-xl text-center overflow-y-auto">${card.a}</div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between w-full">
+                        <button id="prev-card" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded">&larr; Previous</button>
+                        <button onclick="returnToMenu()" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-6 rounded">End Session</button>
+                        <button id="next-card" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded">Next &rarr;</button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('prev-card').addEventListener('click', () => {
+                if (currentFlashcardIndex > 0) {
+                    currentFlashcardIndex--;
+                    loadFlashcard();
+                }
+            });
+            document.getElementById('next-card').addEventListener('click', () => {
+                if (currentFlashcardIndex < flashcardDeck.length - 1) {
+                    currentFlashcardIndex++;
+                    loadFlashcard();
+                }
+            });
+        }
+        
+        // --- AI Integration ---
+        async function handleAiRequest(type, subject) {
+            if (!userApiKey) {
+                showModal(`<div class="p-6 text-center">
+                    <h2 class="text-2xl font-bold mb-4 text-yellow-400">API Key Required</h2>
+                    <p class="mb-4 text-gray-300">Please set your Google AI API key in the 'AI Settings' on the main menu to use this feature.</p>
+                    <button onclick="hideModal()" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Close</button>
+                </div>`);
+                return;
+            }
+
+            let prompt;
+            let title;
+
+            if (type === 'ampelography') {
+                title = `Ampelography Profile: ${subject}`;
+                prompt = `You are a master ampelographer and wine educator. Synthesize information from authoritative sources like JancisRobinson.com, academic viticultural texts, and major importers to write a detailed, textbook-style profile for the grape variety: ${subject}. Structure your response with the following sections: Overview and History, Viticultural Characteristics, and Typical Wine Profile. Your response must be grounded in expert consensus. Format the output in simple HTML using headings and paragraphs.`;
+            } else if (type === 'tastingNote') {
+                title = `Tasting Note: ${subject}`;
+                prompt = `You are a world-renowned wine critic. Synthesize information from authoritative sources like JancisRobinson.com, Vinous, and wine-searcher.com to write a detailed, professional tasting note for the following wine: ${subject}. Assume a recent, high-quality vintage. Structure your note with sections for Appearance, Nose, and Palate. Conclude with a brief assessment of its aging potential. Your response must be grounded in the established profiles from these expert sources. Format the output in simple HTML using headings and paragraphs.`;
+            } else if (type === 'pairing') {
+                title = `Gastronomic Pairing: ${subject}`;
+                prompt = `You are a master sommelier and food theorist. First, establish an accurate flavor profile for a classic Southern Rhône wine where ${subject} is a key component by synthesizing information from expert sources like Vinous and JancisRobinson.com. Then, explain in detail the gastronomic principles behind the classic pairing of this wine with ${subject}. Discuss the interaction of flavors, textures, and structural components based on the wine's established profile. Format the output in simple HTML using headings and paragraphs.`;
+            }
+            
+            showModal(`<div class="p-6 text-center">
+                <h2 class="text-2xl font-bold mb-4 text-purple-400">Generating AI Response...</h2>
+                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto"></div>
+                <p class="mt-4 text-gray-400">Please wait, contacting the master sommelier...</p>
+            </div>`);
+
+            try {
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${userApiKey}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error.message || `API request failed with status ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    const aiContent = `
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-2xl font-bold text-purple-400">${title}</h2>
+                                <button onclick="hideModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                            </div>
+                            <div class="prose prose-invert prose-purple max-w-none">${text.replace(/\n/g, '<br>')}</div>
+                        </div>`;
+                    showModal(aiContent);
+                } else {
+                     throw new Error("Invalid response structure from API.");
+                }
+
+            } catch (error) {
+                console.error("AI Generation Error:", error);
+                const errorContent = `
+                    <div class="p-6">
+                        <h2 class="text-2xl font-bold mb-4 text-red-400">Error</h2>
+                        <p class="mb-4 text-gray-300">Could not generate AI response. Please check your API key and network connection.</p>
+                        <p class="text-sm text-gray-500 bg-gray-900 p-2 rounded">${error.message}</p>
+                        <button onclick="hideModal()" class="mt-4 w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Close</button>
+                    </div>`;
+                showModal(errorContent);
+            }
+        }
+
+        // --- Utility Functions ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- Initial Load ---
+        window.onload = showWelcomeModal;
+
+    </script>
+</body>
+</html>
