@@ -577,11 +577,6 @@
             const q = questions[currentQuestionIndex];
             const options = shuffleArray([q.a, ...q.o]);
             
-            let aiButtonHtml = '';
-            if (q.aiPrompt) {
-                aiButtonHtml = `<button onclick="handleAiRequest('${q.a}')" class="mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded">✨ Generate AI Insight</button>`;
-            }
-
             gameScreen.innerHTML = `
                 <div class="w-full max-w-3xl">
                     <p class="text-right text-gray-400 mb-2">${currentQuestionIndex + 1} / ${questions.length} | Score: ${score}</p>
@@ -589,7 +584,7 @@
                         <p class="text-xl md:text-2xl font-medium mb-6">${q.q}</p>
                         <div class="space-y-4">
                             ${options.map(option => `
-                                <button class="block w-full text-left bg-gray-700 p-4 rounded-lg hover:bg-purple-700 transition-colors duration-200" onclick="checkAnswer('${option.replace(/'/g, "\\'")}')">
+                                <button class="answer-btn block w-full text-left bg-gray-700 p-4 rounded-lg hover:bg-purple-700 transition-colors duration-200" onclick="checkAnswer('${option.replace(/'/g, "\\'")}')">
                                     ${option}
                                 </button>
                             `).join('')}
@@ -598,6 +593,11 @@
                     </div>
                 </div>
             `;
+        }
+        
+        function nextQuestion() {
+            currentQuestionIndex++;
+            loadQuestion();
         }
 
         function checkAnswer(selectedOption) {
@@ -630,12 +630,8 @@
             }
 
             feedbackContainer.innerHTML = feedbackHtml;
-            document.querySelectorAll('#game-screen button').forEach(btn => btn.disabled = true);
-
-            setTimeout(() => {
-                currentQuestionIndex++;
-                loadQuestion();
-            }, isCorrect ? 3000 : 3500);
+            document.querySelectorAll('.answer-btn').forEach(btn => btn.disabled = true);
+            feedbackContainer.innerHTML += `<button onclick="nextQuestion()" class="mt-4 w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Continue</button>`;
         }
         
         // --- Historian's Scroll Logic ---
@@ -716,34 +712,45 @@
         function checkTimeline() {
             const q = questions[currentQuestionIndex];
             const correctTimeline = [...q.events].sort((a, b) => a.date - b.date);
-            let isCorrect = userTimeline.length === correctTimeline.length;
-            if (isCorrect) {
+            let isCompletelyCorrect = userTimeline.length === correctTimeline.length;
+            
+            if (isCompletelyCorrect) {
                 for (let i = 0; i < correctTimeline.length; i++) {
                     if (userTimeline[i].text !== correctTimeline[i].text) {
-                        isCorrect = false;
+                        isCompletelyCorrect = false;
                         break;
                     }
                 }
             }
             
-            if(isCorrect) {
+            if(isCompletelyCorrect) {
                 score++;
             }
+
+            const userTimelineHtml = userTimeline.map((event, i) => {
+                const isEventInCorrectPosition = correctTimeline[i] && correctTimeline[i].text === event.text;
+                const borderColor = isEventInCorrectPosition ? 'border-green-500' : 'border-red-500';
+                return `<li class="p-2 bg-gray-700 rounded border-2 ${borderColor}">${event.text}</li>`;
+            }).join('');
+
+            const correctTimelineHtml = correctTimeline.map(e => 
+                `<li class="p-2 bg-gray-700 rounded border-2 border-green-500">${e.text} <span class="text-gray-400 text-sm">(${e.date > 0 ? e.date : Math.abs(e.date) + ' BC'})</span></li>`
+            ).join('');
             
             const feedbackContent = `
                 <div class="p-6">
-                    <h2 class="text-2xl font-bold mb-4 ${isCorrect ? 'text-green-400' : 'text-red-400'}">${isCorrect ? 'Correct!' : 'Incorrect'}</h2>
+                    <h2 class="text-2xl font-bold mb-4 ${isCompletelyCorrect ? 'text-green-400' : 'text-yellow-400'}">${isCompletelyCorrect ? 'Perfect!' : 'Review Your Timeline'}</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <h3 class="font-bold text-lg mb-2 text-purple-400">Your Timeline</h3>
                             <ol class="list-decimal list-inside space-y-2">
-                                ${userTimeline.map(e => `<li class="p-2 bg-gray-700 rounded">${e.text}</li>`).join('')}
+                                ${userTimelineHtml}
                             </ol>
                         </div>
                         <div>
                             <h3 class="font-bold text-lg mb-2 text-purple-400">Correct Timeline</h3>
                             <ol class="list-decimal list-inside space-y-2">
-                                ${correctTimeline.map(e => `<li class="p-2 bg-gray-700 rounded">${e.text} <span class="text-gray-400 text-sm">(${e.date > 0 ? e.date : Math.abs(e.date) + ' BC'})</span></li>`).join('')}
+                                ${correctTimelineHtml}
                             </ol>
                         </div>
                     </div>
@@ -756,11 +763,7 @@
         function nextHistorianQuestion() {
             hideModal();
             currentQuestionIndex++;
-            if (currentQuestionIndex < questions.length) {
-                loadHistorianQuestion();
-            } else {
-                showEndGameModal();
-            }
+            loadHistorianQuestion();
         }
 
         // --- Flashcard Logic ---
