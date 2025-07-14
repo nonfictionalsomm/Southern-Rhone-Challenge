@@ -444,6 +444,7 @@
         let score;
         let questions = [];
         let userTimeline = [];
+        let historianAvailableEvents = [];
         let flashcardDeck = [];
         let currentFlashcardIndex = 0;
         let userApiKey = localStorage.getItem('geminiApiKey') || '';
@@ -643,7 +644,10 @@
 
             const q = questions[currentQuestionIndex];
             userTimeline = [];
-            const availableEvents = shuffleArray([...q.events]);
+            
+            // Add a stable, unique ID to each event for the current question
+            const eventsWithIds = q.events.map((event, index) => ({ ...event, id: `${currentQuestionIndex}-${index}` }));
+            historianAvailableEvents = shuffleArray(eventsWithIds);
 
             gameScreen.innerHTML = `
                 <div class="w-full max-w-4xl">
@@ -654,8 +658,8 @@
                             <div>
                                 <h3 class="font-bold text-lg mb-2 text-purple-400 text-center">Available Events</h3>
                                 <div id="available-events" class="space-y-2">
-                                    ${availableEvents.map((event, index) => `
-                                        <button data-index="${index}" class="timeline-item w-full text-left bg-gray-700 p-3 rounded hover:bg-purple-800 transition-colors duration-200">
+                                    ${historianAvailableEvents.map(event => `
+                                        <button data-id="${event.id}" class="timeline-item w-full text-left bg-gray-700 p-3 rounded hover:bg-purple-800 transition-colors duration-200">
                                             ${event.text}
                                         </button>
                                     `).join('')}
@@ -677,9 +681,9 @@
             
             document.querySelectorAll('#available-events .timeline-item').forEach(button => {
                 button.addEventListener('click', (e) => {
-                    const eventIndex = e.currentTarget.dataset.index;
-                    const event = availableEvents[eventIndex];
-                    if (!userTimeline.includes(event)) {
+                    const eventId = e.currentTarget.dataset.id;
+                    const event = historianAvailableEvents.find(ev => ev.id === eventId);
+                    if (event && !userTimeline.some(e => e.id === event.id)) {
                         userTimeline.push(event);
                         e.currentTarget.classList.add('selected', 'opacity-50', 'cursor-not-allowed');
                         e.currentTarget.disabled = true;
@@ -694,19 +698,23 @@
             timelineContainer.innerHTML = userTimeline.map((event, index) => `
                 <div class="bg-purple-900 p-3 rounded flex items-center justify-between">
                     <span>${index + 1}. ${event.text}</span>
-                    <button class="text-red-400 hover:text-red-200 font-bold" onclick="removeFromTimeline(${index})">&times;</button>
+                    <button class="text-red-400 hover:text-red-200 font-bold" onclick="removeFromTimeline('${event.id}')">&times;</button>
                 </div>
             `).join('');
         }
 
-        function removeFromTimeline(index) {
-            const removedEvent = userTimeline.splice(index, 1)[0];
-            const originalButton = document.querySelector(`#available-events .timeline-item[data-index='${questions[currentQuestionIndex].events.findIndex(e => e.text === removedEvent.text)}']`);
-            if (originalButton) {
-                originalButton.classList.remove('selected', 'opacity-50', 'cursor-not-allowed');
-                originalButton.disabled = false;
+        function removeFromTimeline(eventId) {
+            const indexToRemove = userTimeline.findIndex(event => event.id === eventId);
+
+            if (indexToRemove > -1) {
+                userTimeline.splice(indexToRemove, 1);
+                const buttonToReEnable = document.querySelector(`#available-events .timeline-item[data-id="${eventId}"]`);
+                if (buttonToReEnable) {
+                    buttonToReEnable.disabled = false;
+                    buttonToReEnable.classList.remove('selected', 'opacity-50', 'cursor-not-allowed');
+                }
+                renderUserTimeline();
             }
-            renderUserTimeline();
         }
 
         function checkTimeline() {
