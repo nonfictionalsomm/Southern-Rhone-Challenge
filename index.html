@@ -505,6 +505,19 @@
             currentQuestionIndex++;
             loadQuestion();
         }
+        
+        function generateAiButtonHtml(question) {
+            if (!question.subjectType || !question.subjectName) {
+                return '';
+            }
+            
+            let buttonText = `Dive Deeper on ${question.subjectName}`;
+            if (question.subjectType === 'dish' || question.subjectType === 'wine') {
+                 buttonText = `Explain the Pairing for ${question.subjectName}`;
+            }
+
+            return `<button onclick="handleAiRequest('${question.subjectType}', '${question.subjectName.replace(/'/g, "\\'")}')" class="mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded text-sm">${buttonText}</button>`;
+        }
 
         function checkAnswer(selectedOption) {
             const q = questions[currentQuestionIndex];
@@ -516,14 +529,9 @@
                 score++;
                 feedbackHtml = `<div class="p-4 rounded-lg bg-green-900 border border-green-700">
                                     <p class="font-bold text-green-300">Correct!</p>
-                                    <p class="text-green-400">${q.a}</p>`;
-                
-                // AI Button Logic - only show if subjectType and subjectName exist
-                if (q.subjectType && q.subjectName) {
-                    feedbackHtml += `<button onclick="handleAiRequest('${q.subjectType}', '${q.subjectName.replace(/'/g, "\\'")}')" class="mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded text-sm">Tell me more about ${q.subjectName}</button>`;
-                }
-
-                feedbackHtml += `</div>`;
+                                    <p class="text-green-400">${q.a}</p>
+                                    ${generateAiButtonHtml(q)}
+                                </div>`;
             } else {
                 feedbackHtml = `<div class="p-4 rounded-lg bg-red-900 border border-red-700">
                                     <p class="font-bold text-red-300">Incorrect.</p>
@@ -804,14 +812,20 @@
                     break;
                 case 'wine':
                 case 'producer':
+                case 'vintage':
+                case 'place':
                     title = `Critic's Focus: ${subjectName}`;
-                    prompt = `You are a world-renowned wine critic specializing exclusively in the wines of the ${region}. Your task is to write a professional profile for the following iconic ${region} wine/producer: ${subjectName}. Your analysis must adhere to a strict pyramid of importance: 1) The specific wine/producer's style. 2) The character of its specific appellation within the ${region}. 3) The general characteristics of the ${region}. Do not mention wines from other regions unless making a direct, essential stylistic comparison. Synthesize information from authoritative sources like Vinous, The Wine Advocate, and JancisRobinson.com, but ensure the final note is your own expert synthesis. Assume a recent, high-quality vintage for any wine examples. Format in simple HTML.`;
+                    prompt = `You are a world-renowned wine critic specializing exclusively in the wines of the ${region}. Your task is to write a professional profile for the following iconic ${region} topic: ${subjectName}. Your analysis must adhere to a strict pyramid of importance: 1) The specific subject's style or character. 2) The character of its specific appellation within the ${region}. 3) The general characteristics of the ${region}. Do not mention wines from other regions unless making a direct, essential stylistic comparison. Synthesize information from authoritative sources like Vinous, The Wine Advocate, and JancisRobinson.com, but ensure the final note is your own expert synthesis. Assume a recent, high-quality vintage for any wine examples. Format in simple HTML.`;
                     break;
                 case 'dish':
-                case 'ingredient':
-                    title = `Gastronomic Focus: ${subjectName}`;
-                    prompt = `You are a master sommelier and food theorist specializing in the cuisine and wine of Provence and the ${region}. Your task is to provide an overview of the dish or ingredient: ${subjectName}. Your explanation must follow this strict pyramid of importance: 1. The specific characteristics of the item as found in the region. 2. The typical profile of a ${region} wine that pairs with it. 3. The underlying gastronomic principles (complement, contrast, texture) that make the pairing successful within the context of the region's culture. Synthesize information from expert sources like Larousse Gastronomique, but frame your entire response within the context of the ${region}. Format in simple HTML.`;
+                case 'wine_pairing': // A specific type for questions about pairings
+                    title = `Gastronomic Pairing: ${subjectName}`;
+                    prompt = `You are a master sommelier and food theorist specializing in the cuisine and wine of Provence and the ${region}. Your task is to explain the classic wine pairing for the dish: ${subjectName}. Your explanation must follow this strict pyramid of importance: 1. The specific characteristics of the dish as found in the region. 2. The typical profile of a ${region} wine that pairs with it. 3. The underlying gastronomic principles (complement, contrast, texture) that make the pairing successful within the context of the region's culture. Synthesize information from expert sources, but frame your entire response within the context of the ${region}. Format in simple HTML.`;
                     break;
+                case 'ingredient':
+                     title = `Ingredient Focus: ${subjectName}`;
+                     prompt = `You are a food and wine expert specializing in the cuisine of Provence and the ${region}. Your task is to provide a detailed overview of the ingredient: ${subjectName}. Your response must follow this strict pyramid of importance: 1. How this ingredient is used in the local cuisine of the ${region}. 2. Its typical flavor and aromatic profile. 3. How its profile might be reflected in or complement the local wines (the concept of 'garrigue,' for example), but do not focus on specific pairings unless it is intrinsic to the ingredient itself. Synthesize from authoritative sources. Format in simple HTML.`;
+                     break;
                 case 'spirit':
                 case 'liqueur':
                     title = `Beverage Profile: ${subjectName}`;
@@ -889,3 +903,4 @@
     </script>
 </body>
 </html>
+
