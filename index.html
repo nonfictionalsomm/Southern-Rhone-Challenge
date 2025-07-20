@@ -101,12 +101,16 @@
         </button>
     </div>
 
+    <!-- Game Screen -->
     <div id="game-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-4">
-        </div>
+        <!-- Content will be injected here -->
+    </div>
 
+    <!-- Modals -->
     <div id="modal-container" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
         <div id="modal-content-wrapper" class="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl modal-content overflow-y-auto">
-            </div>
+            <!-- Modal content will be injected here -->
+        </div>
     </div>
 
     <script>
@@ -759,8 +763,10 @@
                     <h2 class="text-2xl font-bold mb-4 text-purple-400">Module Complete!</h2>
                     <p class="text-lg mb-2 text-gray-300">You completed "${moduleData.title}".</p>
                     <p class="text-4xl font-bold mb-6">Score: ${score} / ${questions.length}</p>
-                    <p class="mb-6 text-gray-400">Play again to get a new set of questions and improve your score!</p>
-                    <button onclick="returnToMenu()" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Main Menu</button>
+                    <div class="flex space-x-4">
+                        <button onclick="startGame()" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Keep Going</button>
+                        <button onclick="returnToMenu()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Main Menu</button>
+                    </div>
                 </div>
             `;
             showModal(content);
@@ -803,25 +809,34 @@
                 questions = shuffleArray([...gameData.historian.questions]);
                 loadHistorianQuestion();
             } else {
-                // NEW LOGIC START: Filter out correctly answered questions
                 const allModuleQuestions = [...gameData[currentModule].questions];
                 const correctLog = JSON.parse(localStorage.getItem('correctlyAnsweredQuestions')) || {};
                 const correctQuestionsForModule = correctLog[currentModule] || [];
 
                 let availableQuestions = allModuleQuestions.filter(q => !correctQuestionsForModule.includes(q.q));
 
-                // If all questions have been answered correctly, reset progress for this module
                 if (availableQuestions.length === 0 && allModuleQuestions.length > 0) {
-                    alert("Congratulations! You've mastered this module. Your progress for this section will now be reset.");
-                    correctLog[currentModule] = [];
-                    localStorage.setItem('correctlyAnsweredQuestions', JSON.stringify(correctLog));
-                    availableQuestions = allModuleQuestions;
+                    const masteryContent = `
+                        <div class="p-6 text-center">
+                            <h2 class="text-2xl font-bold mb-4 text-green-400">Module Mastered!</h2>
+                            <p class="mb-4 text-gray-300">Congratulations! You've correctly answered all questions in this module. Your progress will be reset so you can continue to sharpen your knowledge.</p>
+                            <button onclick="resetAndStartGame()" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Play Again</button>
+                        </div>
+                    `;
+                    showModal(masteryContent);
+                    return; 
                 }
                 
                 questions = shuffleArray(availableQuestions).slice(0, 10);
-                // NEW LOGIC END
                 loadQuestion();
             }
+        }
+
+        function resetAndStartGame() {
+            let correctLog = JSON.parse(localStorage.getItem('correctlyAnsweredQuestions')) || {};
+            correctLog[currentModule] = [];
+            localStorage.setItem('correctlyAnsweredQuestions', JSON.stringify(correctLog));
+            startGame();
         }
 
         function returnToMenu() {
@@ -833,6 +848,10 @@
 
         // --- Multiple Choice Logic ---
         function loadQuestion() {
+            if (questions.length === 0) {
+                showEndGameModal();
+                return;
+            }
             if (currentQuestionIndex >= questions.length) {
                 showEndGameModal();
                 return;
@@ -888,7 +907,6 @@
             let feedbackHtml = '';
             if (isCorrect) {
                 score++;
-                // NEW LOGIC START: Save correctly answered question to localStorage
                 const questionText = q.q;
                 let correctLog = JSON.parse(localStorage.getItem('correctlyAnsweredQuestions')) || {};
                 if (!correctLog[currentModule]) {
@@ -898,7 +916,6 @@
                     correctLog[currentModule].push(questionText);
                 }
                 localStorage.setItem('correctlyAnsweredQuestions', JSON.stringify(correctLog));
-                // NEW LOGIC END
 
                 feedbackHtml = `<div class="p-4 rounded-lg bg-green-900 border border-green-700">
                                     <p class="font-bold text-green-300">Correct!</p>
@@ -927,7 +944,6 @@
             const q = questions[currentQuestionIndex];
             userTimeline = [];
             
-            // Add a stable, unique ID to each event for the current question
             const eventsWithIds = q.events.map((event, index) => ({ ...event, id: `${currentQuestionIndex}-${index}` }));
             historianAvailableEvents = shuffleArray(eventsWithIds);
 
@@ -952,8 +968,7 @@
                             </div>
                             <div>
                                 <h3 class="font-bold text-lg mb-2 text-purple-400 text-center">Your Timeline (Earliest to Latest)</h3>
-                                <div id="user-timeline" class="space-y-2 bg-gray-900 p-3 rounded-lg min-h-[200px]">
-                                    </div>
+                                <div id="user-timeline" class="space-y-2 bg-gray-900 p-3 rounded-lg min-h-[200px]"></div>
                             </div>
                         </div>
                         <div class="text-center mt-6">
