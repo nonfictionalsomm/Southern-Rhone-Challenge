@@ -844,6 +844,7 @@
             gameScreen.classList.add('hidden');
             mainMenu.classList.remove('hidden');
             gameScreen.innerHTML = '';
+            checkGlobalMastery();
         }
 
         // --- Multiple Choice Logic ---
@@ -1071,6 +1072,47 @@
             hideModal();
             currentQuestionIndex++;
             loadHistorianQuestion();
+        }
+
+        // --- Mastery Logic ---
+        function checkGlobalMastery() {
+            if (sessionStorage.getItem('globalMasteryAcknowledged')) {
+                return;
+            }
+
+            const modulesToMaster = ['terroir', 'ampelographer', 'lawmaker', 'gastronome', 'critic'];
+            const correctLog = JSON.parse(localStorage.getItem('correctlyAnsweredQuestions')) || {};
+            
+            let allMastered = true;
+            for (const module of modulesToMaster) {
+                const totalQuestions = gameData[module].questions.length;
+                const correctlyAnswered = (correctLog[module] || []).length;
+                if (correctlyAnswered < totalQuestions) {
+                    allMastered = false;
+                    break;
+                }
+            }
+
+            if (allMastered) {
+                showGlobalMasteryModal();
+            }
+        }
+
+        function showGlobalMasteryModal() {
+            const content = `
+                <div class="p-6 text-center">
+                    <h2 class="text-2xl font-bold mb-4 text-purple-400">Congratulations, Wine Master!</h2>
+                    <p class="mb-4 text-gray-300">You have demonstrated exceptional knowledge by correctly answering every question across all core modules. You have truly mastered the Southern Rhône!</p>
+                    <p class="mb-6 text-gray-300">To keep your expertise sharp, continue to practice with the <strong>Flashcard Study</strong> decks.</p>
+                    <button onclick="closeGlobalMasteryModal()" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Continue</button>
+                </div>
+            `;
+            showModal(content);
+        }
+
+        function closeGlobalMasteryModal() {
+            sessionStorage.setItem('globalMasteryAcknowledged', 'true');
+            hideModal();
         }
 
         // --- Flashcard Logic ---
